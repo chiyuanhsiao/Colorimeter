@@ -200,7 +200,7 @@ class ColourChart():
         self.colourchart = ImageTk.PhotoImage(self.im)
         self.canvas = tk.Canvas(self.root, width=self.im.size[0], height=self.im.size[1])
         self.canvas.create_image(0, 0, anchor='nw', image=self.colourchart)
-        self.cursor = self.canvas.create_oval(93, 123, 103, 133)
+        self.cursor = self.canvas.create_oval(93, 129, 103, 139)
         
     def move(self, x, y):
         self.canvas.moveto(self.cursor, 20 + 220 * x, 231 - 28 - 220 * y)
@@ -219,7 +219,7 @@ def main():
     root = tk.Tk()
     root.title("Color")
     
-    image_window = ScrollableImage(root, image=None, scrollbarwidth=6, width=1080, height=720)
+    image_window = ScrollableImage(root, image=None, scrollbarwidth=6, width=900, height=600)
     image_window.grid(row=0, column=0, sticky='nsew')
 
     status_column = StatusColumn(root, image_window=image_window, PIL_image=None)
