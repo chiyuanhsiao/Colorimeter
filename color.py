@@ -3,6 +3,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import platform
 import rawpy
+import sys
 
 class ScrollableImage(tk.Frame):
     def __init__(self, master=None, **kw):
@@ -126,7 +127,7 @@ class StatusColumn(tk.Frame):
                 x_coord, y_coord = self.image_window.coordinate(event)
                 if (x_coord >= 0 and x_coord < self.image_window.image.width() and y_coord >= 0 and y_coord < self.image_window.image.height()):
                     r, g, b = self.PIL_image.getpixel((x_coord, y_coord))
-                    X, Y, Z, x, y, z = RGBtoXYZ(r, g, b)
+                    X, Y, Z, x, y, z = RGBtoXYZ(float(r), float(g), float(b))
                     self.colourchart.move(x, y)
                     #self.status.set(f"Coordinate \n\tx: {x_coord} \n\ty: {y_coord} \n\nRGB \n\tr: {r} \n\tg: {g} \n\tb: {b} \n\nCIE1931 \n\tY: {round(Y, 2)} \n\tx: {round(x, 4)} \n\ty: {round(y, 4)}")
                     self.x_coord_var.set(f"x: {x_coord}")
@@ -221,6 +222,12 @@ def OpenRaw(path):
     return Image.fromarray(a, mode='RGB')
 
 def RGBtoXYZ(R, G, B):
+    if R == 0:
+        R = sys.float_info.min
+    if G == 0:
+        G = sys.float_info.min
+    if B == 0:
+        B = sys.float_info.min
     R /= 255
     G /= 255
     B /= 255
@@ -230,14 +237,9 @@ def RGBtoXYZ(R, G, B):
     X = (0.4124564 * R + 0.3575761 * G + 0.1804375 * B) * 100
     Y = (0.2126729 * R + 0.7151522 * G + 0.0721750 * B) * 100
     Z = (0.0193339 * R + 0.1191920 * G + 0.9503041 * B) * 100
-    if (X + Y + Z != 0):
-        x = X / (X + Y + Z)
-        y = Y / (X + Y + Z)
-        z = Z / (X + Y + Z)
-    else:
-        x = 1 / 3
-        y = 1 / 3
-        z = 1 / 3
+    x = X / (X + Y + Z)
+    y = Y / (X + Y + Z)
+    z = Z / (X + Y + Z)
     return X, Y, Z, x, y, z
     
 def tolinear(k):
