@@ -225,15 +225,15 @@ def RGBtoXYZ(R, G, B):
     R /= 255
     G /= 255
     B /= 255
+    R = tolinear(R)
+    G = tolinear(G)
+    B = tolinear(B)
     if R == 0:
         R = sys.float_info.min
     if G == 0:
         G = sys.float_info.min
     if B == 0:
         B = sys.float_info.min
-    R = tolinear(R)
-    G = tolinear(G)
-    B = tolinear(B)
     X = (0.4124564 * R + 0.3575761 * G + 0.1804375 * B) * 100
     Y = (0.2126729 * R + 0.7151522 * G + 0.0721750 * B) * 100
     Z = (0.0193339 * R + 0.1191920 * G + 0.9503041 * B) * 100
