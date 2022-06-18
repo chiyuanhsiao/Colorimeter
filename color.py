@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import platform
+import rawpy
 
 class ScrollableImage(tk.Frame):
     def __init__(self, master=None, **kw):
@@ -66,7 +67,7 @@ class StatusColumn(tk.Frame):
         self.y_coord.grid(row=1, column=0, sticky='nw')
         self.coordinate.grid(row=1, column=0, sticky='ew')
         
-        self.RGB = tk.LabelFrame(self, text="RGB Value", padx=12, pady=6)
+        self.RGB = tk.LabelFrame(self, text="sRGB", padx=12, pady=6)
         self.R_var = tk.StringVar()
         self.R_var.set("R: None")
         self.R = tk.Entry(self.RGB, textvariable=self.R_var, cursor='xterm', state='readonly')
@@ -125,7 +126,7 @@ class StatusColumn(tk.Frame):
                 x_coord, y_coord = self.image_window.coordinate(event)
                 if (x_coord >= 0 and x_coord < self.image_window.image.width() and y_coord >= 0 and y_coord < self.image_window.image.height()):
                     r, g, b = self.PIL_image.getpixel((x_coord, y_coord))
-                    X, Y, Z, x, y, z = fromRGB(r, g, b)
+                    X, Y, Z, x, y, z = RGBtoXYZ(r, g, b)
                     self.colourchart.move(x, y)
                     #self.status.set(f"Coordinate \n\tx: {x_coord} \n\ty: {y_coord} \n\nRGB \n\tr: {r} \n\tg: {g} \n\tb: {b} \n\nCIE1931 \n\tY: {round(Y, 2)} \n\tx: {round(x, 4)} \n\ty: {round(y, 4)}")
                     self.x_coord_var.set(f"x: {x_coord}")
@@ -143,15 +144,15 @@ class StatusColumn(tk.Frame):
                     #self.status.set(f"Coordinate \n\tx: {x_coord} \n\ty: {y_coord} \n\nRGB \n\tr: fault \n\tg: fault \n\tb: fault \n\nCIE1931 \n\tY: fault \n\tx: fault \n\ty: fault")
                     self.x_coord_var.set(f"x: {x_coord}")
                     self.y_coord_var.set(f"y: {y_coord}")
-                    self.R_var.set(f"R: fault")
-                    self.G_var.set(f"G: fault")
-                    self.B_var.set(f"B: fault")
-                    self.X_var.set(f"X: fault")
-                    self.Y_var.set(f"Y: fault")
-                    self.Z_var.set(f"Z: fault")
-                    self.x_var.set(f"x: fault")
-                    self.y_var.set(f"y: fault")
-                    self.z_var.set(f"z: fault")
+                    self.R_var.set(f"R: out of range")
+                    self.G_var.set(f"G: out of range")
+                    self.B_var.set(f"B: out of range")
+                    self.X_var.set(f"X: out of range")
+                    self.Y_var.set(f"Y: out of range")
+                    self.Z_var.set(f"Z: out of range")
+                    self.x_var.set(f"x: out of range")
+                    self.y_var.set(f"y: out of range")
+                    self.z_var.set(f"z: out of range")
         else:
             #self.status.set(f"Coordinate \n\tx: {event.x} \n\ty: {event.y} \n\nRGB \n\tr: {0} \n\tg: {0} \n\tb: {0} \n\nCIE1931 \n\tY: {0} \n\tx: {0} \n\ty: {0}")
             self.x_coord_var.set(f"x: {event.x}")
@@ -194,7 +195,10 @@ class MenuBar():
             path = filedialog.askopenfilename(initialdir="C:/", title="Select Image")
         if (self.PIL_image != None):
             self.PIL_image.close()
-        self.PIL_image = Image.open(path)
+        if (path[-3:] == 'dng'):
+            self.PIL_image = OpenRaw(path)
+        else:
+            self.PIL_image = Image.open(path)
         self.tkimage = ImageTk.PhotoImage(self.PIL_image)
         self.image_window.change_image(self.tkimage)
         self.status_column.change_image(self.PIL_image)
@@ -211,15 +215,36 @@ class ColourChart():
     def move(self, x, y):
         self.canvas.moveto(self.cursor, 20 + 220 * x, 231 - 28 - 220 * y)
         
+def OpenRaw(path):
+    raw = rawpy.imread(path)
+    a = raw.postprocess(output_color=rawpy.ColorSpace.sRGB, no_auto_bright=True)
+    return Image.fromarray(a, mode='RGB')
 
-def fromRGB(R, G, B):
-    X = (0.49 * R + 0.31 * G + 0.20 * B) / 0.17697
-    Y = (0.17697 * R + 0.81240 * G + 0.01063 * B) / 0.17697
-    Z = (0.00 * R + 0.01 * G + 0.99 * B) / 0.17697
-    x = X / (X + Y + Z)
-    y = Y / (X + Y + Z)
-    z = Z / (X + Y + Z)
+def RGBtoXYZ(R, G, B):
+    R /= 255
+    G /= 255
+    B /= 255
+    R = tolinear(R)
+    G = tolinear(G)
+    B = tolinear(B)
+    X = (0.4124564 * R + 0.3575761 * G + 0.1804375 * B) * 100
+    Y = (0.2126729 * R + 0.7151522 * G + 0.0721750 * B) * 100
+    Z = (0.0193339 * R + 0.1191920 * G + 0.9503041 * B) * 100
+    if (X + Y + Z != 0):
+        x = X / (X + Y + Z)
+        y = Y / (X + Y + Z)
+        z = Z / (X + Y + Z)
+    else:
+        x = 1 / 3
+        y = 1 / 3
+        z = 1 / 3
     return X, Y, Z, x, y, z
+    
+def tolinear(k):
+    if k > 0.04045:
+        return ((k + 0.055) / 1.055) ** 2.4
+    else:
+        return k / 12.92
 
 def main():
     root = tk.Tk()
