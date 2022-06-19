@@ -1,5 +1,5 @@
 # Colorimeter
-It's my final project of photonics experiment. The purpose is to measure the color information, such as RGB value, luminance and XYZ coordinates of CIE 1931 color space. 
+It's my final project of photonics lab. The purpose is to measure the color information, such as RGB value, luminance and XYZ coordinates of CIE 1931 color space. 
 
 ## Usage
 You can open this program by simply following below commands:
